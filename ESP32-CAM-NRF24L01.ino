@@ -1,3 +1,10 @@
+/*
+ * Author: Juan Pablo Gomez
+ * Date: July 2021
+ * 
+ * This code takes the pixel data in the esp32-cam and send the data using the NRF24L01 module
+ */
+
 #include <SPI.h>
 #include <RH_NRF24.h>
 #include <RHSoftwareSPI.h>
@@ -76,6 +83,11 @@ void loop()
   itoa(pixel, cstr, 10);
   Serial.println(cstr);
 
+  /*
+   * the esp_camera_fb_get() creates a uint8_t buffer(aka unsigned 8 bit integer), 
+   * but send() expects a uint8_t*(aka pointer to unsigned 8 bit integer. That's why
+   * you need to change the data types before sending the data
+   */
   nrf24.send((uint8_t*)cstr, sizeof(cstr));
   nrf24.waitPacketSent();
   
