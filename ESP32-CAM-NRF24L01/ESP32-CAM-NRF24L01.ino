@@ -56,6 +56,8 @@ void loop()
   itoa(buffer_length, char_buffer_length, 10);
   Serial.println(char_buffer_length);
 
+  //ESP8266 only accepts mallocs with less than 52k,
+  //so to be sure, send only images < 45000 bytes
   if(buffer_length < 45000){
     
     //let the receiver know the transfer is starting
