@@ -51,7 +51,7 @@ void loop()
     delay(1000);
     ESP.restart();
   }
-  
+    
   buffer_length = image->len;
   itoa(buffer_length, char_buffer_length, 10);
   Serial.println(char_buffer_length);
@@ -72,7 +72,8 @@ void loop()
     delay(10);
     
     //send the pixel data one by one
-    for(int i = 0; i < 1000; i++){
+    for(int i = 0; i < 10
+    0; i++){
      pixel = image->buf[i];
      itoa(pixel, char_pixel, 10);
     
@@ -80,6 +81,7 @@ void loop()
       nrf24.waitPacketSent();
      delay(10);
     }
+
     
     Serial.println("finished");
   }
@@ -94,7 +96,7 @@ void loop()
   
   esp_camera_fb_return(image);
   
-  delay(20000);
+  delay(2000);
 }
 
 void setup_nrf24(){
