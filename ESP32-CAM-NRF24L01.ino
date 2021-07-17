@@ -9,42 +9,29 @@
 #include <RH_NRF24.h>
 #include <RHSoftwareSPI.h>
 #include "esp_camera.h"
+#include "camera_gpio.h"
 
-//functions declaration
+//function declaration
 void setup_nrf24();
 void setup_camera();
-
-// CAMERA_MODEL_AI_THINKER
-#define PWDN_GPIO_NUM     32
-#define RESET_GPIO_NUM    -1
-#define XCLK_GPIO_NUM      0
-#define SIOD_GPIO_NUM     26
-#define SIOC_GPIO_NUM     27
-
-#define Y9_GPIO_NUM       35
-#define Y8_GPIO_NUM       34
-#define Y7_GPIO_NUM       39
-#define Y6_GPIO_NUM       36
-#define Y5_GPIO_NUM       21
-#define Y4_GPIO_NUM       19
-#define Y3_GPIO_NUM       18
-#define Y2_GPIO_NUM        5
-#define VSYNC_GPIO_NUM    25
-#define HREF_GPIO_NUM     23
-#define PCLK_GPIO_NUM     22
 
 //create a SPI with software
 RHSoftwareSPI spi;
 
-//nrf24 constructor
+
+//NRF24L01 constructor. This library allows SPI as a software, 
+//so we can choose any pin we want for MOSI, MISO and CSK.
 RH_NRF24 nrf24(15, 2, spi);
 
-//camera config variable
-camera_config_t config;
+//To store the pixel data one by one and then send it 
+uint8_t pixel = 0;
+char char_pixel[4];
 
-int pixel = 0;
-uint8_t pixel_2;
-char cstr[16];
+//16bits because some images are 50-60kbytes long
+uint16_t buffer_length = 0;
+char char_buffer_length[5];
+
+uint8_t start_com[] = "start communication";
 
 void setup() 
 { 
@@ -57,71 +44,55 @@ void setup()
 
 void loop()
 { 
-  //this part takes the picture
-  camera_fb_t * fb = esp_camera_fb_get();
-  if(!fb) {
+  //take an images
+  camera_fb_t * image = esp_camera_fb_get();
+  if(!image) {
     Serial.println("Camera capture failed");
     delay(1000);
     ESP.restart();
   }
   
-  int fb_length = fb->len; 
-  
-  Serial.println(fb_length);
-  Serial.println(fb->buf[0]);
-  Serial.println(sizeof(fb->buf[0]));
+  buffer_length = image->len;
+  itoa(buffer_length, char_buffer_length, 10);
+  Serial.println(char_buffer_length);
 
-  for(int i = 0; i< 10; i++){
-    Serial.println(fb->buf[i]);
+  if(buffer_length < 45000){
+    
+    //let the receiver know the transfer is starting
+    Serial.println("Start communication");
+    nrf24.send(start_com, sizeof(start_com));
+    nrf24.waitPacketSent();
+    delay(10);
+    
+    //send the length of the buffer, so the receiver can be able to reconstruct it
+    nrf24.send((uint8_t*)char_buffer_length, sizeof(char_buffer_length));
+    nrf24.waitPacketSent();
+    delay(10);
+    
+    //send the pixel data one by one
+    for(int i = 0; i < 1000; i++){
+     pixel = image->buf[i];
+     itoa(pixel, char_pixel, 10);
+    
+      nrf24.send((uint8_t*)char_pixel, sizeof(char_pixel));
+      nrf24.waitPacketSent();
+     delay(10);
+    }
+    
+    Serial.println("finished");
   }
-
-  pixel_2 = fb->buf[1];
-  Serial.println(pixel_2);
-  Serial.println(sizeof(pixel_2));
-
-  pixel = pixel_2;
-  itoa(pixel, cstr, 10);
-  Serial.println(cstr);
+ 
 
   /*
-   * the esp_camera_fb_get() creates a uint8_t buffer(aka unsigned 8 bit integer), 
-   * but send() expects a uint8_t*(aka pointer to unsigned 8 bit integer. That's why
-   * you need to change the data types before sending the data
-   */
-  nrf24.send((uint8_t*)cstr, sizeof(cstr));
-  nrf24.waitPacketSent();
-  
-  esp_camera_fb_return(fb);
-  
-  //this part sends the message
-  Serial.println("Sending to nrf24_server");
-  // Send a message to nrf24_server
-  uint8_t data[] = "Hello World!";
-  nrf24.send(data, sizeof(data));
-  
-  nrf24.waitPacketSent();
-  // Now wait for a reply
-  uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
+  * the esp_camera_fb_get() creates a uint8_t buffer(aka unsigned 8 bit integer), 
+  * but send() expects a uint8_t*(aka pointer to unsigned 8 bit integer. That's why
+  * you need to change the data types before sending the data
+  */
 
-  if (nrf24.waitAvailableTimeout(500))
-  { 
-    // Should be a reply message for us now   
-    if (nrf24.recv(buf, &len))
-    {
-      Serial.print("got reply: ");
-      Serial.println((char*)buf);
-    }
-    else
-    {
-      Serial.println("recv failed");
-    }
-  }
-  else
-  {
-    Serial.println("No reply, is nrf24_server running?");
-  }
-  delay(5000);
+  
+  esp_camera_fb_return(image);
+  
+  delay(20000);
 }
 
 void setup_nrf24(){
@@ -129,11 +100,11 @@ void setup_nrf24(){
     
   if (!nrf24.init()){
     
-    Serial.println("init failed");
+    Serial.println("init nrf24 failed");
   }
   else{
     
-    Serial.println("init succeed");
+    Serial.println("init nrf24 succeed");
   }
   
   if (!nrf24.setChannel(1)){
@@ -157,6 +128,9 @@ void setup_nrf24(){
 
 void setup_camera(){
 
+  //camera configuration variable
+  camera_config_t config; 
+  
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
