@@ -1,3 +1,4 @@
+
 /*
  * Author: Juan Pablo Gomez
  * Date: July 2021
@@ -51,7 +52,37 @@ void loop()
     delay(1000);
     ESP.restart();
   }
-    
+  /*
+  //test
+ 
+  for(int i = 0; i < 5; i++){
+    Serial.println(image->buf[i]);
+  }
+   uint8_t * buff;
+   buff = (uint8_t*)malloc(5);
+   for(int i = 0; i < 5; i++){
+    buff[i] = 155;
+    Serial.println(buff[i]);
+   }
+  //puedes guardar números al pointer creado con malloc
+  buff[1] = image->buf[1];
+  Serial.println(buff[1]);
+
+  //el buffer tiene 255, 253, ... NO "255", "253",... son números, no un array de caracteres
+  uint8_t valor2 = image->buf[0] - 1;
+  Serial.println(valor2);
+
+  //convierte un uint8_t valor[] en int. el primero es un array de caracteres, como lo que recive radiohead
+  uint8_t valor[6] = "123";
+  uint8_t valor3 = atoi((char*)valor); 
+  Serial.println(valor3);
+
+  //convierte un array de caracteres y guardalo directamente en el buffer 
+  buff[2] = atoi((char*)valor);
+  Serial.println(buff[2]);
+  free(buff);
+  //test
+  */
   buffer_length = image->len;
   itoa(buffer_length, char_buffer_length, 10);
   Serial.println(char_buffer_length);
@@ -64,24 +95,25 @@ void loop()
     Serial.println("Start communication");
     nrf24.send(start_com, sizeof(start_com));
     nrf24.waitPacketSent();
-    delay(10);
+    delay(100);
     
     //send the length of the buffer, so the receiver can be able to reconstruct it
     nrf24.send((uint8_t*)char_buffer_length, sizeof(char_buffer_length));
     nrf24.waitPacketSent();
-    delay(10);
+    delay(100);
     
     //send the pixel data one by one
-    for(int i = 0; i < 10
-    0; i++){
+    for(int i = 0; i < 5; i++){
      pixel = image->buf[i];
      itoa(pixel, char_pixel, 10);
-    
-      nrf24.send((uint8_t*)char_pixel, sizeof(char_pixel));
-      nrf24.waitPacketSent();
-     delay(10);
+     nrf24.send((uint8_t*)char_pixel, sizeof(char_pixel));
+     nrf24.waitPacketSent();
+     delay(100);
     }
 
+    for(int i = 0; i < 100; i++){
+      Serial.println(image->buf[i]);
+    }
     
     Serial.println("finished");
   }
@@ -96,7 +128,7 @@ void loop()
   
   esp_camera_fb_return(image);
   
-  delay(2000);
+  delay(10000);
 }
 
 void setup_nrf24(){
