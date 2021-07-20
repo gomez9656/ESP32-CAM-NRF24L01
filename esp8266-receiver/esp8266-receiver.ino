@@ -39,60 +39,71 @@ void setup()
 
 void loop()
 { 
-  if (nrf24.available())
+  if (nrf24.available())// available() test if there is a message available
   {
     // Should be a message for us now   
     uint8_t buf[RH_NRF24_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);
-    if (nrf24.recv(buf, &len))
-    {
-      //following the communication steps, this are the pixels one by one
-      if(counter > 1){
-
-        image[0 + (counter - 2)] = atoi((char*)buf);
-        counter++;
-      }
-
+    
+    if (nrf24.recv(buf, &len))//copy the available message to buf
+    { 
+      /*
       //if counter == to this, it means we reached the final pixel
       if(counter == 7){
 
-        for(int i = 0; i < 100; i++){
+        for(int i = 0; i < 5; i++){
           Serial.println(image[i]);
         }
         
         //free the allocated memory for the image buffer
         free(image);
+        
         counter = 0;
+        
         Serial.println("finish transmission");
       }
       
+      
+      //following the communication steps, this are the pixels one by one
+      if(counter > 1){
+
+        image[0 + (counter - 2)] = atoi((char*)buf);
+        
+        counter++;
+      }
+      */
+      /*
+      if(counter == 2){
+        counter = 0;
+      }
       //following the communication steps, counter == 1 is the buffer length
       if(counter == 1){
       
         Serial.print("got request: ");
         Serial.println((char*)buf);
+        
         buffer_length = atoi((char*)buf);
+        
         //allocate a very big memory for the image buffer
-        image = (uint8_t*)malloc(buffer_length);
-
+        image = (uint8_t*)calloc(5, 1);
+        free(image);
         counter++;
       }
     
       //if buf == "start communication"
       //then the communication is starting
-      if(memcmp(buf, start_com, 20) == 0){
+      if(strncmp((const char*)buf, (const char*)start_com, 20) == 0){
         
-        Serial.println("Communication starting");
-        counter++;
-
         Serial.print("got request: ");
         Serial.println((char*)buf);
-      }
 
-      /*
+        counter++;
+      }
+      */
+      
       Serial.print("got request: ");
       Serial.println((char*)buf);
-      */
+      
     }
     else
     {
