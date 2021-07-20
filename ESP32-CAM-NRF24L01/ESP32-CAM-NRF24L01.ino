@@ -85,7 +85,6 @@ void loop()
   */
   buffer_length = image->len;
   itoa(buffer_length, char_buffer_length, 10);
-  Serial.println(char_buffer_length);
 
   //ESP8266 only accepts mallocs with less than 52k,
   //so to be sure, send only images < 45000 bytes
@@ -95,26 +94,22 @@ void loop()
     Serial.println("Start communication");
     nrf24.send(start_com, sizeof(start_com));
     nrf24.waitPacketSent();
-    delay(100);
-    
+    delay(2000);
+  
     //send the length of the buffer, so the receiver can be able to reconstruct it
+    Serial.println(char_buffer_length);
     nrf24.send((uint8_t*)char_buffer_length, sizeof(char_buffer_length));
     nrf24.waitPacketSent();
-    delay(100);
-    
+    delay(400);
+    /*
     //send the pixel data one by one
     for(int i = 0; i < 5; i++){
      pixel = image->buf[i];
      itoa(pixel, char_pixel, 10);
      nrf24.send((uint8_t*)char_pixel, sizeof(char_pixel));
      nrf24.waitPacketSent();
-     delay(100);
     }
-
-    for(int i = 0; i < 100; i++){
-      Serial.println(image->buf[i]);
-    }
-    
+    */
     Serial.println("finished");
   }
  
@@ -124,8 +119,6 @@ void loop()
   * but send() expects a uint8_t*(aka pointer to unsigned 8 bit integer. That's why
   * you need to change the data types before sending the data
   */
-
-  
   esp_camera_fb_return(image);
   
   delay(10000);
